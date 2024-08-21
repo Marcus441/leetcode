@@ -7,12 +7,14 @@
 #include <strings.h>
 #include <time.h>
 
+#define HASH_SIZE 20000
+
 typedef struct {
   int index;
   int num;
 } result;
 
-result *hashTable[10];
+result *hashTable[HASH_SIZE];
 
 void hashInit() {
   for (int i = 0; i < 10; i++) {
@@ -20,10 +22,10 @@ void hashInit() {
   }
 }
 
-unsigned int hash(int key, int numsSize) { return key % numsSize; }
+unsigned int hash(int key) { return (key % HASH_SIZE + HASH_SIZE) % HASH_SIZE; }
 
 bool hashInsert(int number, int numsSize, int realIndex) {
-  int index = hash(number, numsSize);
+  int index = hash(number);
 
   while (hashTable[index] != NULL) {
     if (hashTable[index]->num == number) {
@@ -39,34 +41,44 @@ bool hashInsert(int number, int numsSize, int realIndex) {
   return true;
 }
 
-result *hashLookup(int number, int numsSize) {
-  unsigned int index = hash(number, numsSize);
+result *hashLookup(int number) {
+  unsigned int index = hash(number);
   while (hashTable[index] != NULL) {
     if (hashTable[index]->num == number)
       return hashTable[index];
-    index = (index + 1) % numsSize;
+    index = (index + 1) % HASH_SIZE;
   }
   return NULL;
+}
+void hashFree() {
+  for (int i = 0; i < HASH_SIZE; i++) {
+    if (hashTable[i] != NULL) {
+      free(hashTable[i]);
+      hashTable[i] = NULL;
+    }
+  }
 }
 
 int *twoSum(int *nums, int numsSize, int target, int *returnSize) {
   hashInit();
+  hashFree();
   for (int i = 0; i < numsSize; i++) {
     hashInsert(nums[i], numsSize, i);
   }
   for (int i = 0; i < numsSize; i++) {
     int comp = target - nums[i];
-    result *searchComp = hashLookup(comp, numsSize);
-    if (searchComp != NULL) {
-      result *searchNum = hashLookup(nums[i], numsSize);
+    result *searchComp = hashLookup(comp);
+    if (searchComp != NULL && searchComp->index != i) {
       int *answer = (int *)malloc(2 * sizeof(int));
       answer[0] = searchComp->index;
-      answer[1] = searchNum->index;
+      answer[1] = i;
       *returnSize = 2;
       return answer;
     }
   }
   *returnSize = 0;
+  hashFree();
+
   return NULL;
   /* populate hash table*/
   /* iterat through hash table*/
